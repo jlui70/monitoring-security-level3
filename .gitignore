@@ -1,0 +1,31 @@
+# Docker volumes
+**/mysql-data/
+**/grafana-data/
+**/prometheus-data/
+**/vault-data/
+
+# Logs
+*.log
+logs/
+
+# Backups de senhas
+**/password-backups/
+**/*.backup.*
+
+# Environment files com senhas
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporários
+tmp/
+temp/
