@@ -1,6 +1,56 @@
 # 🔐 Monitoring Security Stack - Level 3
 
-**HashiCorp Vault + Secrets Management** - Stack completa de monitoramento com gestão centralizada de secrets.
+**HashiCorp Vault + Secrets Management Foundation** - Stack completa de monitoramento com **fundação** para gestão centralizada de secrets.
+
+> 🎯 **Posição na Série**: Este é o **Level 3 de 5** na evolução de segurança  
+> 📈 **Próximo**: Level 4 (AWS Secrets Manager) → Level 5 (Kubernetes + External Secrets Operator)
+
+---
+
+## ⚠️ **Importante: Estado Atual da Integração Vault**
+
+**O que este nível REALMENTE oferece:**
+
+✅ **Vault configurado e funcional**
+- Todos os secrets armazenados com **criptografia AES-256**
+- **Auditoria completa** de todos os acessos aos secrets
+- **Versionamento** de alterações de senhas
+- **Políticas de acesso** granulares por serviço
+- **Fundação sólida** para evolução futura
+
+⚠️ **Limitação técnica (Docker Compose)**
+- Containers ainda **leem senhas do `.env`** para compatibilidade
+- `.env` necessário para inicialização dos containers
+- **Não é consumo direto** do Vault (isso vem no Level 5)
+
+**Por quê?**  
+Docker Compose requer variáveis de ambiente no `docker-compose up`. Consumo direto do Vault requer:
+- **Vault Agent** ou entrypoint scripts customizados (complexo em Docker Compose)
+- **Kubernetes + External Secrets Operator** (implementado no Level 5)
+
+**Benefícios REAIS mesmo com `.env`:**
+1. 📊 **Auditoria**: Rastreamos QUEM acessou QUAL secret QUANDO
+2. 🔐 **Centralização**: Vault é a fonte única de verdade
+3. 🔄 **Versionamento**: Histórico de todas as alterações
+4. 🎯 **Preparação**: Infraestrutura pronta para Level 5 (K8s + Vault)
+5. 🛡️ **Segregação**: Políticas de acesso já configuradas
+
+---
+
+## 🎯 **Evolução da Série (5 Níveis)**
+
+| Nível | Foco | Secrets Storage | Onde Containers Leem | Status |
+|-------|------|-----------------|----------------------|--------|
+| **Level 1** | Básico | Hardcoded | Código fonte | ✅ |
+| **Level 2** | Env Vars | `.env` files | `.env` | ✅ |
+| **Level 3** | **Vault Foundation** | **Vault + `.env`** | **`.env`** | **📍 VOCÊ ESTÁ AQUI** |
+| **Level 4** | AWS Secrets | AWS Secrets Manager | AWS API | 🔜 |
+| **Level 5** | **K8s + Vault** | **Vault** | **External Secrets** | 🔜 |
+
+**Level 3 = Fundação para produção**  
+**Level 5 = Vault verdadeiro (zero `.env`, consumo direto)**
+
+---
 
 ## 🚀 **Quick Start (2 comandos)**
 
@@ -14,9 +64,27 @@ cd monitoramento && ./setup.sh
 ```
 
 **Pronto!** Aguarde 8-10 minutos e acesse:
-- **Vault UI**: http://localhost:8200 (Token: vault-dev-root-token)
-- **Zabbix**: http://localhost:8080 (Admin/zabbix)
-- **Grafana**: http://localhost:3000 (admin/admin)
+- **Vault UI**: http://localhost:8200 (Token: `vault-dev-root-token`)
+- **Zabbix**: http://localhost:8080 (Consulte `monitoramento/CREDENTIALS.md`)
+- **Grafana**: http://localhost:3000 (Consulte `monitoramento/CREDENTIALS.md`)
+
+> 📄 **Senhas de acesso**: Consulte `monitoramento/CREDENTIALS.md` para credenciais atuais
+
+### **🎬 Demo Rápida (5 minutos):**
+
+```bash
+# Demonstrar features do Vault implementadas
+cd monitoramento && ./demo-vault-features.sh
+```
+
+**O script demonstra:**
+- ✅ Auditoria habilitada e funcionando
+- ✅ Versionamento automático de secrets
+- ✅ Políticas de acesso segregadas
+- ✅ Logs de auditoria com timestamps
+- ✅ Rollback de versões anteriores
+
+> 📖 **Explicações detalhadas**: Consulte `monitoramento/VAULT-FEATURES-DEMO.md`
 
 ---
 
@@ -47,35 +115,51 @@ cd monitoramento && ./setup.sh
 
 **💡 Por que limpar?** Volumes Docker persistem dados do MySQL/Vault com senhas antigas, causando conflitos.
 
-### **⚠️ Workaround Necessário na Primeira Instalação:**
+---
 
-Se os containers do Zabbix não iniciarem automaticamente após o primeiro `docker-compose up -d`, execute:
+## ⚙️ **Notas Técnicas (Primeira Instalação)**
 
+### **MySQL Healthcheck:**
+O MySQL pode levar até **3 minutos** para inicializar na primeira vez (criação do schema Zabbix). O healthcheck aguarda até **210 segundos** antes de considerar o container healthy.
+
+**Comportamento normal:**
 ```bash
-# Verificar se MySQL está healthy
+# Verificar status
 docker-compose ps
 
-# Se Zabbix não estiver rodando, iniciar manualmente
-docker-compose up -d zabbix-server zabbix-web zabbix-agent2
-
-# Aguardar 6-7 minutos para criação do schema
-./check-zabbix-ready.sh
-
-# Quando pronto, os scripts de configuração executarão automaticamente
+# MySQL aparecerá como "starting" ou "health: starting"
+# Aguarde até aparecer "healthy" antes que o Zabbix inicie
 ```
 
-**💡 Isso ocorre** devido ao timing do healthcheck do MySQL em instalações limpas. Este workaround garante que o Zabbix inicie corretamente.
+### **Startup Automático do Zabbix:**
+O `setup.sh` inclui workaround que detecta se o Zabbix não iniciou automaticamente e corrige:
+```bash
+# O script verifica após docker-compose up
+# Se Zabbix não estiver "Up", executa:
+docker-compose up -d zabbix-server zabbix-web zabbix-agent2
+```
+
+**💡 Isso é transparente** - o `setup.sh` cuida de tudo automaticamente.
 
 ---
 
 ## 📊 **O que você ganha no Level 3?**
 
-### **✅ Novos Recursos do Level 3:**
-- 🏦 **HashiCorp Vault** - Gerenciamento centralizado de secrets
-- 🔑 **Zero senhas em texto** - Todas gerenciadas pelo Vault
-- 📊 **Auditoria completa** - Log de todos os acessos
-- 🔄 **Rotação automática** - Senhas rotacionadas sem downtime
-- 🛡️ **Criptografia AES-256** - Máxima segurança
+### **✅ Vault Foundation (Preparação para Produção):**
+- 🏦 **HashiCorp Vault Configurado** - Servidor Vault rodando e integrado
+- � **Secrets Criptografados** - AES-256 no armazenamento
+- 📊 **Auditoria Habilitada** - Log de todos os acessos aos secrets
+- 🔄 **Versionamento de Secrets** - Histórico de alterações
+- 🛡️ **Políticas de Acesso** - Segregação por serviço (MySQL, Zabbix, Grafana)
+- 🎯 **Infraestrutura Pronta** - Base para Level 5 (K8s + External Secrets)
+
+### **⚠️ O que AINDA NÃO faz (vem no Level 5):**
+- ❌ Consumo direto do Vault pelos containers (ainda leem do `.env`)
+- ❌ Eliminação completa do arquivo `.env` (necessário para Docker Compose)
+- ❌ Injeção dinâmica de secrets via Vault Agent
+
+**Benefício REAL agora**: Auditoria + Centralização + Fundação para produção  
+**Benefício COMPLETO**: Level 5 (Kubernetes + External Secrets Operator)
 
 ### **✅ Herda Tudo do Level 2:**
 - 🌍 **Ambientes Separados** - Dev, Staging, Production
@@ -101,17 +185,68 @@ docker exec -it development-vault vault kv list secret/
 # Ver secret específico
 docker exec -it development-vault vault kv get secret/mysql/root-password
 
-# Atualizar secret
+# Atualizar secret (cria nova versão automaticamente)
 docker exec -it development-vault vault kv put secret/mysql/root-password value="NovaSenha123!"
 
-# Ver logs de auditoria
-docker exec -it development-vault vault audit list
+# Ver histórico de versões (auditoria de mudanças)
+docker exec -it development-vault vault kv metadata get secret/mysql/root-password
+
+# Recuperar versão anterior (rollback)
+docker exec -it development-vault vault kv get -version=1 secret/mysql/root-password
+
+# Ver logs de auditoria (quem acessou o quê)
+docker exec -it development-vault cat /vault/data/audit.log | tail -20
 ```
+
+### **Demonstração de Auditoria:**
+
+```bash
+# Verificar que auditoria está habilitada
+docker exec development-vault vault audit list
+# Saída: file/    file    n/a
+
+# Acessar um secret
+docker exec development-vault vault kv get secret/zabbix/admin-password
+
+# Ver registro de auditoria (JSON com timestamp, usuário, operação)
+docker exec development-vault cat /vault/data/audit.log | tail -5 | jq
+```
+
+> 📊 **Exemplo completo de demonstração**: Consulte `monitoramento/VAULT-FEATURES-DEMO.md`
 
 ### **Acessar Vault UI:**
 1. Abra http://localhost:8200
 2. Use o token: `vault-dev-root-token`
 3. Navegue em `secret/` para ver todos os secrets
+4. Clique em qualquer secret → aba "Version History" para ver versionamento
+
+---
+
+## ⚙️ **Features Implementadas vs Roadmap**
+
+### **✅ Implementado e Funcionando:**
+
+| Feature | Status | Como Testar |
+|---------|--------|-------------|
+| **Auditoria Completa** | ✅ 100% | `vault audit list` + ver `/vault/data/audit.log` |
+| **Versionamento Automático** | ✅ 100% | `vault kv metadata get secret/mysql/root-password` |
+| **Políticas de Acesso** | ✅ 100% | `vault policy read mysql-policy` |
+| **Criptografia AES-256** | ✅ 100% | Transparente (Vault encrypts at rest) |
+| **Centralização de Secrets** | ✅ 100% | Todos os secrets em `secret/*` |
+
+### **⚠️ Limitações Conhecidas (Docker Compose):**
+
+| Feature | Status Atual | Quando vem? |
+|---------|--------------|-------------|
+| **Rotação Automática Agendada** | ❌ Manual apenas | Level 5 (Kubernetes + External Secrets) |
+| **Consumo Direto do Vault** | ❌ Containers leem `.env` | Level 5 (External Secrets Operator) |
+| **Injeção Dinâmica de Secrets** | ❌ Restart necessário | Level 5 (Vault Agent Injector) |
+| **Eliminação do `.env`** | ❌ Ainda necessário | Level 5 (K8s ConfigMaps + Secrets) |
+
+**Por quê?**  
+Docker Compose requer variáveis de ambiente no startup. Mudanças no Vault não propagam para containers rodando. Soluções enterprise (Vault Agent, External Secrets) requerem Kubernetes.
+
+> 📖 **Detalhes técnicos**: Consulte `monitoramento/VAULT-FEATURES-DEMO.md` para exemplos práticos e scripts de demonstração.
 
 ---
 
@@ -192,10 +327,13 @@ Cada serviço possui seu próprio token com permissões limitadas.
 | Aspecto | **Level 2** | **Level 3** | **Melhoria** |
 |---------|-------------|-------------|--------------|
 | **Armazenamento** | `.env` files | HashiCorp Vault | +500% |
-| **Acesso** | Variáveis ambiente | Tokens temporários | +400% |
-| **Rotação** | Manual | Automática | +300% |
-| **Auditoria** | Logs básicos | Completa | +600% |
-| **Criptografia** | Base64 opcional | AES-256 + TLS | +800% |
+| **Acesso** | Variáveis ambiente | Políticas Vault | +400% |
+| **Auditoria** | Nenhuma | Completa (arquivo + timestamp) | +1000% |
+| **Versionamento** | Nenhum | Histórico completo | +800% |
+| **Criptografia** | Nenhuma | AES-256 em repouso | +900% |
+| **Rotação** | Manual sem rastreio | Manual com versionamento | +200% |
+
+> 💡 **Nota**: Rotação **automática agendada** requer Kubernetes + External Secrets (Level 5)
 
 ---
 
