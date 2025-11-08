@@ -108,18 +108,18 @@ start_stack() {
     
     # Garantir que containers Zabbix iniciem (workaround para depends_on)
     log_info "Verificando containers do Zabbix..."
-    sleep 5
+    sleep 10
     
-    # Verificar se containers Zabbix foram criados mas não iniciados
-    local zabbix_created=$(docker-compose ps -a | grep -c "zabbix" || echo "0")
-    local zabbix_running=$(docker-compose ps | grep -c "zabbix" || echo "0")
+    # Verificar especificamente se zabbix-server está rodando (container crítico)
+    local zabbix_server_status=$(docker-compose ps zabbix-server | grep -c "Up" || echo "0")
     
-    if [ "$zabbix_created" -gt 0 ] && [ "$zabbix_running" -eq 0 ]; then
-        log_warning "Containers Zabbix criados mas não iniciados - aplicando workaround..."
+    if [ "$zabbix_server_status" -eq 0 ]; then
+        log_warning "Zabbix server não iniciado automaticamente - aplicando workaround..."
         docker-compose up -d zabbix-server zabbix-web zabbix-agent2
+        sleep 3
         log_success "Containers Zabbix iniciados manualmente"
-    elif [ "$zabbix_running" -gt 0 ]; then
-        log_success "Containers Zabbix já estão rodando"
+    else
+        log_success "Containers Zabbix iniciados automaticamente"
     fi
 }
 
