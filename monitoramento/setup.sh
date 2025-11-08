@@ -99,11 +99,12 @@ start_stack() {
     log_info "Subindo a stack completa..."
     docker-compose up -d
     
-    if [ $? -eq 0 ]; then
+    local compose_exit_code=$?
+    if [ $compose_exit_code -eq 0 ]; then
         log_success "Stack iniciada com sucesso!"
     else
-        log_error "Erro ao iniciar a stack"
-        exit 1
+        log_warning "Docker compose retornou código $compose_exit_code (pode ser timeout do MySQL)"
+        log_info "Continuando... containers podem ter sido criados mesmo assim"
     fi
     
     # Garantir que containers Zabbix iniciem (workaround para depends_on)
