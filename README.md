@@ -47,6 +47,25 @@ cd monitoramento && ./setup.sh
 
 **💡 Por que limpar?** Volumes Docker persistem dados do MySQL/Vault com senhas antigas, causando conflitos.
 
+### **⚠️ Workaround Necessário na Primeira Instalação:**
+
+Se os containers do Zabbix não iniciarem automaticamente após o primeiro `docker-compose up -d`, execute:
+
+```bash
+# Verificar se MySQL está healthy
+docker-compose ps
+
+# Se Zabbix não estiver rodando, iniciar manualmente
+docker-compose up -d zabbix-server zabbix-web zabbix-agent2
+
+# Aguardar 6-7 minutos para criação do schema
+./check-zabbix-ready.sh
+
+# Quando pronto, os scripts de configuração executarão automaticamente
+```
+
+**💡 Isso ocorre** devido ao timing do healthcheck do MySQL em instalações limpas. Este workaround garante que o Zabbix inicie corretamente.
+
 ---
 
 ## 📊 **O que você ganha no Level 3?**

@@ -105,6 +105,22 @@ start_stack() {
         log_error "Erro ao iniciar a stack"
         exit 1
     fi
+    
+    # Garantir que containers Zabbix iniciem (workaround para depends_on)
+    log_info "Verificando containers do Zabbix..."
+    sleep 5
+    
+    # Verificar se containers Zabbix foram criados mas não iniciados
+    local zabbix_created=$(docker-compose ps -a | grep -c "zabbix" || echo "0")
+    local zabbix_running=$(docker-compose ps | grep -c "zabbix" || echo "0")
+    
+    if [ "$zabbix_created" -gt 0 ] && [ "$zabbix_running" -eq 0 ]; then
+        log_warning "Containers Zabbix criados mas não iniciados - aplicando workaround..."
+        docker-compose up -d zabbix-server zabbix-web zabbix-agent2
+        log_success "Containers Zabbix iniciados manualmente"
+    elif [ "$zabbix_running" -gt 0 ]; then
+        log_success "Containers Zabbix já estão rodando"
+    fi
 }
 
 # Aguardar Vault estar pronto
@@ -140,11 +156,24 @@ setup_vault() {
         exit 1
     fi
     
+    # Carregar variáveis de ambiente do .env
+    if [ -f .env ]; then
+        set -a
+        source .env
+        set +a
+    fi
+    
     # Executar script de inicialização do Vault
     log_info "Inicializando Vault com políticas e secrets..."
-    docker exec development-vault /bin/sh -c "cd /vault/scripts && ./init-vault.sh" || {
-        log_warning "Script init-vault.sh não encontrado ou falhou"
-        log_info "Você pode inicializar manualmente mais tarde"
+    docker exec -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+                -e MYSQL_PASSWORD="${MYSQL_PASSWORD}" \
+                -e ZABBIX_ADMIN_PASSWORD="${ZABBIX_ADMIN_PASSWORD}" \
+                -e GF_SECURITY_ADMIN_PASSWORD="${GF_SECURITY_ADMIN_PASSWORD}" \
+                -e MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD}" \
+                ${ENVIRONMENT:-development}-vault /bin/sh /vault/scripts/init-vault.sh || {
+        log_warning "Script init-vault.sh falhou ou não foi encontrado"
+        log_info "Vault está rodando mas sem secrets inicializados"
+        log_info "Você pode configurar manualmente via UI em http://localhost:8200"
     }
     
     log_success "Vault configurado!"
@@ -268,6 +297,10 @@ validate_services() {
 
 # Mostrar informações de acesso
 show_access_info() {
+    # Obter credenciais do .env
+    GRAFANA_USER="${GF_SECURITY_ADMIN_USER:-admin}"
+    GRAFANA_PASS="${GF_SECURITY_ADMIN_PASSWORD:-admin}"
+    
     echo ""
     echo "🎉 Setup concluído! Acesse os serviços:"
     echo "========================================"
@@ -283,8 +316,8 @@ show_access_info() {
     echo ""
     echo "📊 Grafana:"
     echo "   URL: http://localhost:3000"
-    echo "   User: admin"
-    echo "   Password: admin"
+    echo "   User: ${GRAFANA_USER}"
+    echo "   Password: ${GRAFANA_PASS}"
     echo ""
     echo "⚡ Prometheus:"
     echo "   URL: http://localhost:9090"
@@ -296,8 +329,8 @@ show_access_info() {
     echo "   URL: http://localhost:9104"
     echo ""
     echo "💡 Comandos úteis do Vault:"
-    echo "   docker exec -it development-vault vault kv list secret/"
-    echo "   docker exec -it development-vault vault kv get secret/mysql/root-password"
+    echo "   docker exec -it ${ENVIRONMENT:-development}-vault vault kv list secret/"
+    echo "   docker exec -it ${ENVIRONMENT:-development}-vault vault kv get secret/mysql/root-password"
     echo ""
     echo "💡 Dicas:"
     echo "   - Aguarde 2-3 minutos para todos os serviços estarem 100% operacionais"
@@ -337,6 +370,18 @@ main() {
             setup_vault
             wait_for_services
             validate_services
+            
+            # Configurações adicionais após inicialização
+            log_info "Executando configurações adicionais..."
+            
+            # Configurar Zabbix automaticamente
+            log_info "Configurando Zabbix (templates e DNS)..."
+            ./configure-zabbix.sh
+            
+            # Importar dashboards do Grafana
+            log_info "Importando dashboards para Grafana..."
+            ./import-dashboards.sh
+            
             show_access_info
             ;;
         "start")
@@ -372,8 +417,11 @@ main() {
             if [ "$confirm" = "yes" ]; then
                 log_info "Removendo stack e dados..."
                 docker-compose down -v
-                docker system prune -f
+                log_info "Removendo volumes órfãos e cache..."
+                docker volume prune -f
+                docker network prune -f
                 log_success "Limpeza concluída!"
+                log_info "Para instalação limpa, execute: ./setup.sh"
             else
                 log_info "Operação cancelada."
             fi

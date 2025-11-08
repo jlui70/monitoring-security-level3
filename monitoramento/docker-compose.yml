@@ -4,8 +4,6 @@
 # Stack de Monitoramento com secrets centralizados no Vault
 # Versão: 3.0 - Vault Integration
 
-version: '3.8'
-
 # Definição de redes
 networks:
   monitoring-network:
@@ -24,8 +22,6 @@ volumes:
     name: ${ENVIRONMENT:-dev}-vault-data
   vault-config:
     name: ${ENVIRONMENT:-dev}-vault-config
-  shared-secrets:
-    name: ${ENVIRONMENT:-dev}-shared-secrets
 
 services:  # Definição dos containers
 
@@ -44,7 +40,8 @@ services:  # Definição dos containers
     volumes:
       - vault-data:/vault/data
       - vault-config:/vault/config
-      - ../vault/policies:/vault/policies
+      - ../vault/policies:/vault/policies:ro
+      - ../vault/scripts:/vault/scripts:ro
     cap_add:
       - IPC_LOCK
     command: vault server -dev
@@ -52,10 +49,10 @@ services:  # Definição dos containers
       - monitoring-network
     healthcheck:
       test: ["CMD", "vault", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     labels:
       - "monitoring.component=vault"
       - "monitoring.environment=${ENVIRONMENT:-dev}"
@@ -63,20 +60,13 @@ services:  # Definição dos containers
   mysql-server:
     image: mysql:${MYSQL_VERSION}
     container_name: ${ENVIRONMENT:-dev}-mysql-server
-    depends_on:
-      vault:
-        condition: service_healthy
     environment:
-      MYSQL_DATABASE: "${MYSQL_DATABASE}"
-      MYSQL_USER: "${MYSQL_USER}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       MYSQL_INITDB_SKIP_TZINFO: "1"
-    command: --character-set-server=utf8 --collation-server=utf8_bin
+    command: --character-set-server=utf8 --collation-server=utf8_bin --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
-      - shared-secrets:/shared
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     ports:
       - "3306:3306"
@@ -84,8 +74,10 @@ services:  # Definição dos containers
       - monitoring-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
-      timeout: 20s
+      interval: 10s
+      timeout: 5s
       retries: 10
+      start_period: 40s
     labels:
       - "environment=${ENVIRONMENT}"
       - "service=mysql"
@@ -95,17 +87,16 @@ services:  # Definição dos containers
     image: zabbix/zabbix-server-mysql:${ZABBIX_VERSION}
     container_name: ${ENVIRONMENT:-dev}-zabbix-server
     depends_on:
-      vault:
-        condition: service_healthy
       mysql-server:
         condition: service_healthy
     environment:
-      DB_SERVER_HOST: "development-mysql-server"
+      DB_SERVER_HOST: "${ENVIRONMENT:-dev}-mysql-server"
       MYSQL_DATABASE: "${MYSQL_DATABASE}"
       MYSQL_USER: "${MYSQL_USER}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
-    volumes:
-      - shared-secrets:/shared
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      ZBX_STARTPOLLERS: "${ZBX_STARTPOLLERS:-5}"
+      ZBX_TIMEOUT: "${ZBX_TIMEOUT:-30}"
     restart: unless-stopped
     networks:
       - monitoring-network
@@ -117,25 +108,21 @@ services:  # Definição dos containers
     image: zabbix/zabbix-web-apache-mysql:${ZABBIX_VERSION}
     container_name: ${ENVIRONMENT:-dev}-zabbix-web
     depends_on:
-      vault:
-        condition: service_healthy
       mysql-server:
         condition: service_healthy
       zabbix-server:
         condition: service_started
     environment:
-      ZBX_SERVER_HOST: "development-zabbix-server"
-      DB_SERVER_HOST: "development-mysql-server"
+      ZBX_SERVER_HOST: "${ENVIRONMENT:-dev}-zabbix-server"
+      DB_SERVER_HOST: "${ENVIRONMENT:-dev}-mysql-server"
       MYSQL_DATABASE: "${MYSQL_DATABASE}"
       MYSQL_USER: "${MYSQL_USER}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
-      PHP_TZ: "America/Sao_Paulo"
-      TZ: "America/Sao_Paulo"
-    volumes:
-      - shared-secrets:/shared
+      PHP_TZ: "${PHP_TZ:-America/Sao_Paulo}"
+      TZ: "${TZ:-America/Sao_Paulo}"
     restart: unless-stopped
     ports:
-      - "${ZABBIX_WEB_PORT:-8081}:8080"
+      - "${ZABBIX_WEB_PORT:-8080}:8080"
     networks:
       - monitoring-network
     labels:
@@ -144,10 +131,10 @@ services:  # Definição dos containers
 
   zabbix-agent2:
     image: zabbix/zabbix-agent2:${ZABBIX_VERSION}
-    container_name: zabbix-agent2
+    container_name: ${ENVIRONMENT:-dev}-zabbix-agent2
     environment:
-      ZBX_HOSTNAME: "Zabbix server"           # Hostname que aparecerá no Zabbix
-      ZBX_SERVER_HOST: "zabbix-server"        # Endereço do servidor Zabbix (nome do container)
+      ZBX_HOSTNAME: "Zabbix server"
+      ZBX_SERVER_HOST: "${ENVIRONMENT:-dev}-zabbix-server"
     depends_on:
       - zabbix-server
     restart: unless-stopped
@@ -156,24 +143,26 @@ services:  # Definição dos containers
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION}
-    container_name: grafana
+    container_name: ${ENVIRONMENT:-dev}-grafana
     environment:
-      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app  # Plugin do Zabbix
+      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning  # Config automática dos dashboards/datasources
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
     restart: unless-stopped
     ports:
-      - "3000:3000"  # Porta do Grafana
+      - "${GRAFANA_PORT:-3000}:3000"
     networks:
       - monitoring-network
 
   prometheus:
     image: prom/prometheus:${PROMETHEUS_VERSION}
-    container_name: prometheus
+    container_name: ${ENVIRONMENT:-dev}-prometheus
     volumes:
       - prometheus-data:/prometheus
-      - ./prometheus:/etc/prometheus  # Arquivo de configuração local
+      - ./prometheus:/etc/prometheus:ro
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -182,7 +171,7 @@ services:  # Definição dos containers
       - "--storage.tsdb.retention.time=200h"
       - "--web.enable-lifecycle"
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     restart: unless-stopped
     networks:
       - monitoring-network
@@ -190,13 +179,13 @@ services:  # Definição dos containers
   # MySQL Exporter - Métricas do banco de dados
   mysql-exporter:
     image: prom/mysqld-exporter:latest
-    container_name: mysql-exporter
+    container_name: ${ENVIRONMENT:-dev}-mysql-exporter
     volumes:
       - ./mysql-exporter/.my.cnf:/home/mysql-exporter/.my.cnf:ro
     command:
       - --config.my-cnf=/home/mysql-exporter/.my.cnf
     ports:
-      - "9104:9104"
+      - "${MYSQL_EXPORTER_PORT:-9104}:9104"
     depends_on:
       - mysql-server
     restart: unless-stopped
@@ -206,7 +195,7 @@ services:  # Definição dos containers
   # Node Exporter - Métricas do sistema operacional
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: node-exporter
+    container_name: ${ENVIRONMENT:-dev}-node-exporter
     command:
       - '--path.procfs=/host/proc'
       - '--path.rootfs=/rootfs'
@@ -217,7 +206,7 @@ services:  # Definição dos containers
       - '/sys:/host/sys:ro'
       - '/:/rootfs:ro'
     ports:
-      - "9100:9100"
+      - "${NODE_EXPORTER_PORT:-9100}:9100"
     restart: unless-stopped
     networks:
       - monitoring-network

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # ======================================
 # SCRIPT DE INICIALIZAÇÃO DO VAULT
@@ -11,73 +11,76 @@ echo "🏦 Inicializando HashiCorp Vault..."
 
 # Aguardar Vault estar pronto
 echo "⏳ Aguardando Vault inicializar..."
+sleep 5
+
+# Verificar se Vault está respondendo
 until vault status >/dev/null 2>&1; do
+    echo "   Aguardando Vault..."
     sleep 2
 done
 
 echo "✅ Vault está pronto!"
 
-# Configurar cliente Vault
-export VAULT_ADDR="http://localhost:8200"
-export VAULT_TOKEN="${VAULT_ROOT_TOKEN:-vault-dev-root-token}"
+# Configurar cliente Vault (já definido no container mas garantir)
+export VAULT_ADDR="http://127.0.0.1:8200"
 
-# Verificar autenticação
-vault auth -token="${VAULT_TOKEN}" >/dev/null 2>&1 || {
-    echo "❌ Erro na autenticação com Vault"
+# Autenticar com root token (passado por variável de ambiente)
+if [ -z "$VAULT_DEV_ROOT_TOKEN_ID" ]; then
+    echo "❌ VAULT_DEV_ROOT_TOKEN_ID não definido"
     exit 1
-}
+fi
+
+export VAULT_TOKEN="$VAULT_DEV_ROOT_TOKEN_ID"
 
 echo "🔑 Criando políticas de acesso..."
 
-# Criar políticas
-vault policy write grafana-policy /vault/policies/grafana-policy.hcl
-vault policy write zabbix-policy /vault/policies/zabbix-policy.hcl  
-vault policy write mysql-policy /vault/policies/mysql-policy.hcl
+# Criar políticas (se os arquivos existirem)
+if [ -f /vault/policies/grafana-policy.hcl ]; then
+    vault policy write grafana-policy /vault/policies/grafana-policy.hcl
+fi
+
+if [ -f /vault/policies/zabbix-policy.hcl ]; then
+    vault policy write zabbix-policy /vault/policies/zabbix-policy.hcl
+fi
+
+if [ -f /vault/policies/mysql-policy.hcl ]; then
+    vault policy write mysql-policy /vault/policies/mysql-policy.hcl
+fi
 
 echo "🔐 Configurando secrets iniciais..."
 
-# Ativar KV secrets engine se não estiver ativo
-vault secrets enable -path=secret kv-v2 2>/dev/null || echo "KV engine já ativo"
+# Ativar KV secrets engine v2 se não estiver ativo
+vault secrets enable -path=secret kv-v2 2>/dev/null || echo "   KV engine já ativo"
+
+# Buscar senhas das variáveis de ambiente do host (passadas via docker-compose)
+# Como estamos em dev mode, usar valores padrão se não estiverem definidos
+
+MYSQL_ROOT_PASS="${MYSQL_ROOT_PASSWORD:-Dev_Root_Vault_2024!@}"
+MYSQL_USER_PASS="${MYSQL_PASSWORD:-Dev_Zabbix_Vault_2024!@}"
+ZABBIX_ADMIN_PASS="${ZABBIX_ADMIN_PASSWORD:-Dev_Admin_Vault_2024!@}"
+GRAFANA_ADMIN_PASS="${GF_SECURITY_ADMIN_PASSWORD:-Dev_Grafana_Vault_2024!@}"
+MYSQL_EXP_PASS="${MYSQL_EXPORTER_PASSWORD:-Dev_Exporter_Vault_2024!@}"
 
 # Secrets do MySQL
-vault kv put secret/mysql/root-password value="${MYSQL_ROOT_PASSWORD}"
-vault kv put secret/mysql/zabbix-password value="${MYSQL_PASSWORD}"
+vault kv put secret/mysql/root-password value="$MYSQL_ROOT_PASS"
+vault kv put secret/mysql/zabbix-password value="$MYSQL_USER_PASS"
 
 # Secrets do Zabbix
-vault kv put secret/zabbix/admin-password value="${ZABBIX_ADMIN_PASSWORD}"
-vault kv put secret/zabbix/database-password value="${MYSQL_PASSWORD}"
+vault kv put secret/zabbix/admin-password value="$ZABBIX_ADMIN_PASS"
+vault kv put secret/zabbix/database-password value="$MYSQL_USER_PASS"
 
 # Secrets do Grafana
-vault kv put secret/grafana/admin-password value="${GRAFANA_ADMIN_PASSWORD}"
+vault kv put secret/grafana/admin-password value="$GRAFANA_ADMIN_PASS"
 
 # Secrets do monitoramento
-vault kv put secret/monitoring/mysql-exporter-password value="${MYSQL_PASSWORD}"
-
-echo "🎫 Criando tokens de aplicação..."
-
-# Criar tokens para cada serviço
-GRAFANA_TOKEN=$(vault token create -policy=grafana-policy -ttl=72h -format=json | jq -r '.auth.client_token')
-ZABBIX_TOKEN=$(vault token create -policy=zabbix-policy -ttl=72h -format=json | jq -r '.auth.client_token')
-MYSQL_TOKEN=$(vault token create -policy=mysql-policy -ttl=72h -format=json | jq -r '.auth.client_token')
-
-# Salvar tokens em arquivo
-cat > /vault/config/service-tokens.env << EOF
-GRAFANA_VAULT_TOKEN=${GRAFANA_TOKEN}
-ZABBIX_VAULT_TOKEN=${ZABBIX_TOKEN}
-MYSQL_VAULT_TOKEN=${MYSQL_TOKEN}
-EOF
+vault kv put secret/monitoring/mysql-exporter-password value="$MYSQL_EXP_PASS"
 
 echo "📊 Habilitando auditoria..."
-vault audit enable file file_path=/vault/data/audit.log 2>/dev/null || echo "Auditoria já habilitada"
+vault audit enable file file_path=/vault/data/audit.log 2>/dev/null || echo "   Auditoria já habilitada"
 
 echo "✅ Vault configurado com sucesso!"
 echo "🌐 UI disponível em: http://localhost:8200"
-echo "🔑 Root Token: ${VAULT_TOKEN}"
-echo ""
-echo "📋 Tokens de serviço criados:"
-echo "   Grafana: ${GRAFANA_TOKEN}"
-echo "   Zabbix:  ${ZABBIX_TOKEN}"
-echo "   MySQL:   ${MYSQL_TOKEN}"
+echo "🔑 Root Token: $VAULT_TOKEN"
 echo ""
 echo "🔍 Comandos úteis:"
 echo "   vault kv list secret/"

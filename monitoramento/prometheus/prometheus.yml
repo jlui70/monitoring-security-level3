@@ -17,14 +17,14 @@ scrape_configs:
   # Monitoramento do Grafana (funciona nativamente)
   - job_name: 'grafana'
     static_configs:
-      - targets: ['grafana:3000']
+      - targets: ['development-grafana:3000']
 
   # Node Exporter - Métricas do sistema operacional  
   - job_name: 'node-exporter'
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ['development-node-exporter:9100']
 
   # MySQL Exporter - Métricas do banco de dados MySQL
   - job_name: 'mysql-exporter'
     static_configs:
-      - targets: ['mysql-exporter:9104']
+      - targets: ['development-mysql-exporter:9104']
