@@ -57,7 +57,7 @@ vault secrets enable -path=secret kv-v2 2>/dev/null || echo "   KV engine já at
 
 MYSQL_ROOT_PASS="${MYSQL_ROOT_PASSWORD:-Dev_Root_Vault_2024!@}"
 MYSQL_USER_PASS="${MYSQL_PASSWORD:-Dev_Zabbix_Vault_2024!@}"
-ZABBIX_ADMIN_PASS="${ZABBIX_ADMIN_PASSWORD:-Dev_Admin_Vault_2024!@}"
+ZABBIX_ADMIN_PASS="${ZABBIX_ADMIN_PASSWORD:-V@ultSecur3P@ss2024!}"
 GRAFANA_ADMIN_PASS="${GF_SECURITY_ADMIN_PASSWORD:-Dev_Grafana_Vault_2024!@}"
 MYSQL_EXP_PASS="${MYSQL_EXPORTER_PASSWORD:-Dev_Exporter_Vault_2024!@}"
 

@@ -40,6 +40,81 @@ fi
 
 echo "✅ Login realizado com sucesso!"
 
+# Carregar senha do Vault do .env
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | grep 'ZABBIX_ADMIN_PASSWORD' | xargs)
+fi
+
+# Alterar senha do usuário Admin para a senha do Vault
+echo "🔐 Alterando senha do Admin para senha do Vault..."
+
+# Primeiro, buscar o userid do Admin
+USER_RESPONSE=$(curl -s -X POST http://localhost:8080/api_jsonrpc.php \
+    -H "Content-Type: application/json" \
+    -d '{
+        "jsonrpc": "2.0",
+        "method": "user.get",
+        "params": {
+            "output": ["userid", "username"],
+            "filter": {
+                "username": "Admin"
+            }
+        },
+        "auth": "'$AUTH_TOKEN'",
+        "id": 2
+    }')
+
+ADMIN_USERID=$(echo "$USER_RESPONSE" | grep -o '"userid":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+if [ -z "$ADMIN_USERID" ]; then
+    echo "⚠️  Não foi possível encontrar userid do Admin"
+else
+    # Alterar a senha (precisa fornecer senha atual)
+    PASSWD_RESPONSE=$(curl -s -X POST http://localhost:8080/api_jsonrpc.php \
+        -H "Content-Type: application/json" \
+        -d '{
+            "jsonrpc": "2.0",
+            "method": "user.update",
+            "params": {
+                "userid": "'$ADMIN_USERID'",
+                "current_passwd": "zabbix",
+                "passwd": "'"${ZABBIX_ADMIN_PASSWORD:-V@ultSecur3P@ss2024!}"'"
+            },
+            "auth": "'$AUTH_TOKEN'",
+            "id": 3
+        }')
+    
+    if echo "$PASSWD_RESPONSE" | grep -q '"result"'; then
+        echo "✅ Senha do Admin alterada para a senha do Vault!"
+        echo "   Nova senha: ${ZABBIX_ADMIN_PASSWORD:-V@ultSecur3P@ss2024!}"
+        
+        # Fazer re-login com a nova senha
+        echo "🔄 Fazendo re-login com a nova senha..."
+        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8080/api_jsonrpc.php \
+            -H "Content-Type: application/json" \
+            -d '{
+                "jsonrpc": "2.0",
+                "method": "user.login",
+                "params": {
+                    "username": "Admin",
+                    "password": "'"${ZABBIX_ADMIN_PASSWORD:-V@ultSecur3P@ss2024!}"'"
+                },
+                "id": 10
+            }')
+        
+        AUTH_TOKEN=$(echo "$AUTH_RESPONSE" | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
+        
+        if [ -z "$AUTH_TOKEN" ]; then
+            echo "❌ Erro ao fazer re-login"
+            exit 1
+        fi
+        echo "✅ Re-login realizado com sucesso!"
+    else
+        echo "⚠️  Falha ao alterar senha do Admin"
+        echo "   Resposta: $PASSWD_RESPONSE"
+    fi
+fi
+
 # Buscar o host "Zabbix server"
 echo "🔍 Buscando host 'Zabbix server'..."
 
