@@ -46,14 +46,6 @@ Docker Compose requer variáveis de ambiente no `docker-compose up`. Consumo dir
 | **[Level 4](https://github.com/jlui70/monitoring-security-level4)** | AWS Cloud | AWS Secrets Manager | AWS API | Terraform + EC2 | ✅ |
 | **[Level 5](https://github.com/jlui70/monitoring-security-level5)** | **K8s + Vault** | **Vault (KV v2)** | **Kubernetes Secrets** | **Kubernetes** | ✅ |
 
-## 🎯 **Evolução da Série (5 Níveis COMPLETOS)**
-
-- **[Level 1](https://github.com/jlui70/monitoring-security-level1)** - Baseline (hardcoded secrets)
-- **[Level 2](https://github.com/jlui70/monitoring-security-level2)** - Env vars (`.env` files) ⬅️ **VOCÊ ESTÁ AQUI**
-- **[Level 3](https://github.com/jlui70/monitoring-security-level3)** - Vault Foundation (Vault + `.env`)
-- **[Level 4](https://github.com/jlui70/monitoring-security-level4-aws-v2)** - AWS Cloud (AWS Secrets Manager)
-- **[Level 5](https://github.com/jlui70/monitoring-security-level5)** - **K8s + Vault (Consumo direto)** 
-
 ---
 
 ## 🚀 **Quick Start (2 comandos)**
