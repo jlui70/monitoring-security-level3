@@ -46,6 +46,63 @@ Docker Compose requer variáveis de ambiente no `docker-compose up`. Consumo dir
 | **[Level 4](https://github.com/jlui70/monitoring-security-level4)** | AWS Cloud | AWS Secrets Manager | AWS API | Terraform + EC2 | ✅ |
 | **[Level 5](https://github.com/jlui70/monitoring-security-level5)** | **K8s + Vault** | **Vault (KV v2)** | **Kubernetes Secrets** | **Kubernetes** | ✅ |
 
+## 🎯 **Evolução da Série (5 Níveis COMPLETOS)**
+
+<table>
+<thead>
+<tr>
+<th style="min-width: 100px;">Nível</th>
+<th>Foco</th>
+<th>Secrets Storage</th>
+<th>Onde Containers Leem</th>
+<th>Orquestração</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Level&nbsp;1</strong></td>
+<td>Baseline</td>
+<td>Hardcoded</td>
+<td>Código fonte</td>
+<td>Docker Compose</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Level&nbsp;2</strong></td>
+<td>Env Vars</td>
+<td><code>.env</code> files</td>
+<td><code>.env</code></td>
+<td>Docker Compose</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Level&nbsp;3</strong></td>
+<td>Vault Foundation</td>
+<td>Vault + <code>.env</code></td>
+<td><code>.env</code></td>
+<td>Docker Compose</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Level&nbsp;4</strong></td>
+<td>AWS Cloud</td>
+<td>AWS Secrets Manager</td>
+<td>AWS API</td>
+<td>Terraform + EC2</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Level&nbsp;5</strong></td>
+<td><strong>K8s + Vault</strong></td>
+<td><strong>Vault (KV v2)</strong></td>
+<td><strong>Kubernetes Secrets</strong></td>
+<td><strong>Kubernetes</strong></td>
+<td><strong>✅ VOCÊ ESTÁ AQUI</strong></td>
+</tr>
+</tbody>
+</table>
+
 ---
 
 ## 🚀 **Quick Start (2 comandos)**
