@@ -38,7 +38,7 @@ Docker Compose requer variáveis de ambiente no `docker-compose up`. Consumo dir
 ---
 ## 🎯 **Evolução da Série (5 Níveis COMPLETOS)**
 
-| Nível | Foco | Secrets Storage | Onde Containers Leem | Orquestração | Status |
+| Nível                | Foco | Secrets Storage | Onde Containers Leem | Orquestração | Status |
 |-------|------|-----------------|----------------------|--------------|--------|
 | **[Level 1](https://github.com/jlui70/monitoring-security-level1)** | Baseline | Hardcoded | Código fonte | Docker Compose | ✅ |
 | **[Level 2](https://github.com/jlui70/monitoring-security-level2)** | Env Vars | `.env` files | `.env` | Docker Compose | ✅ |
