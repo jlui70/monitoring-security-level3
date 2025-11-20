@@ -37,14 +37,15 @@ Docker Compose requer variáveis de ambiente no `docker-compose up`. Consumo dir
 
 ---
 
-🎯 Evolução da Série (5 Níveis COMPLETOS)
-Nível	Foco	Secrets Storage	Onde Containers Leem	Orquestração	Status
-Level 1	Baseline	Hardcoded	Código fonte	Docker Compose	✅
-Level 2	Env Vars	.env files	.env	Docker Compose	✅
-Level 3	Vault Foundation	Vault + .env	.env	Docker Compose	✅ VOCÊ ESTÁ AQUI
-Level 4	AWS Cloud	AWS Secrets Manager	AWS API	Terraform + EC2	✅
-Level 5	K8s + Vault	Vault (KV v2)	Kubernetes Secrets	Kubernetes	✅ 
+## 🎯 **Evolução da Série (5 Níveis COMPLETOS)**
 
+| Nível | Foco | Secrets Storage | Onde Containers Leem | Orquestração | Status |
+|-------|------|-----------------|----------------------|--------------|--------|
+| **Level 1** | Baseline | Hardcoded | Código fonte | Docker Compose | ✅ |
+| **Level 2** | Env Vars | `.env` files | `.env` | Docker Compose | ✅ |
+| **Level 3** | Vault Foundation | Vault + `.env` | `.env` | Docker Compose | ✅ | VOCÊ ESTÁ AQUI** |
+| **Level 4** | AWS Cloud | AWS Secrets Manager | AWS API | Terraform + EC2 | ✅ |
+| **Level 5** | **K8s + Vault** | **Vault (KV v2)** | **Kubernetes Secrets** | **Kubernetes** | ✅ |
 **Level 3 = Fundação para produção**  
 **Level 5 = Vault verdadeiro (zero `.env`, consumo direto)**
 
