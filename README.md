@@ -1,7 +1,10 @@
-# 🔐 Monitoring Security Stack - Level 3
+# 🔐 Monitoring Security Evolution - Nível 3: Vault Foundation
+## Stack de Monitoramento com Zabbix, Grafana e Prometheus + HashiCorp Vault
 
-**HashiCorp Vault + Secrets Management Foundation** - Stack completa de monitoramento com **fundação** para gestão centralizada de secrets.
-
+![Security Level](https://img.shields.io/badge/Security%20Level-3%20Vault%20Foundation-yellow)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
+![Vault](https://img.shields.io/badge/HashiCorp-Vault-black)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-green)
 > 🎯 **Posição na Série**: Este é o **Level 3 de 5** na evolução de segurança  
 > 📈 **Próximo**: Level 4 (AWS Secrets Manager) → Level 5 (Kubernetes + External Secrets Operator)
 
