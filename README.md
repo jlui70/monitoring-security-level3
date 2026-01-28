@@ -8,6 +8,25 @@
 
 ---
 
+## 📋 **Sobre Este Projeto**
+
+Este projeto implementa uma stack completa de monitoramento com **HashiCorp Vault** como fundação para gerenciamento de secrets, representando o **Nível 3** de uma série evolutiva de segurança em infraestrutura.
+
+Para demonstrar a evolução de segurança, construí uma arquitetura completa de monitoramento integrando:
+
+🏦 **HashiCorp Vault** com criptografia AES-256, auditoria completa e versionamento de secrets
+📊 **Zabbix 7.0.5** para monitoramento de infraestrutura e serviços
+📈 **Grafana 12.0.2** com dashboards pré-configurados e integração com múltiplas fontes
+🔍 **Prometheus** + **Node Exporter** + **MySQL Exporter** para coleta de métricas
+🗄️ **MySQL 8.0** com monitoramento avançado de performance
+🐳 **Docker Compose** orquestrando toda a stack com healthchecks automáticos
+
+🎯 **Objetivo**: Demonstrar implementação prática de secrets management com Vault, incluindo auditoria, versionamento e políticas de acesso granulares, servindo como fundação para ambientes corporativos e preparação para Kubernetes (Level 5).
+
+✅ **Resultado**: Infraestrutura de monitoramento com gestão centralizada de secrets, auditoria completa de acessos, versionamento automático e políticas de segregação por serviço, reduzindo riscos de exposição e preparando o terreno para automação enterprise.
+
+---
+
 ## ⚠️ **Importante: Estado Atual da Integração Vault**
 
 **O que este nível REALMENTE oferece:**
@@ -424,4 +443,33 @@ grep VAULT_ROOT_TOKEN monitoramento/.env
 
 **💡 Dica**: Para ambientes corporativos, considere usar Vault em modo produção (não-dev) com armazenamento persistente e configuração de alta disponibilidade.
 
-**🎉 Level 3 representa um salto qualitativo em segurança, adequado para uso corporativo e preparado para certificações de conformidade!**
+---
+
+## 📜 Licença
+
+Este projeto está sob licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 📞 Contato e Suporte
+
+### 🌐 Conecte-se Comigo
+
+- 📹 **YouTube**: [DevOps Project](https://devopsproject.com.br/)
+- 💼 **Portfólio**: [devopsproject.com.br](https://devopsproject.com.br/)
+- 💻 **GitHub**: [@jlui70](https://github.com/jlui70)
+
+### 🌟 Gostou do Projeto?
+
+Se este projeto foi útil para você:
+
+- ⭐ Dê uma estrela no repositório
+- 🔄 Compartilhe com a comunidade
+- 📹 Inscreva-se no canal do YouTube
+- 🤝 Contribua com melhorias
+
+---
+
+**🎯 Este é o terceiro passo de uma jornada completa de segurança. A evolução continua nos próximos níveis!**
+
+*"O gerenciamento de secrets é a fundação da segurança em produção. Centralize, audite, evolua."*
