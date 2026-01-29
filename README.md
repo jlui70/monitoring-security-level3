@@ -1,6 +1,8 @@
 # 🔐 Monitoring Security Evolution - Nível 3: HashiCorp Vault Foundation
 ## Stack de Monitoramento com Zabbix, Grafana e Prometheus
 
+![Diagrama de Arquitetura](Diagrama%20camadas%20Monitoring%20Security%203.png)
+
 ![Security Level](https://img.shields.io/badge/Security%20Level-3%20Vault%20Foundation-yellow)
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 ![Vault](https://img.shields.io/badge/HashiCorp-Vault-black)
